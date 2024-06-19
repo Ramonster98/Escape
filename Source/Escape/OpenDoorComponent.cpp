@@ -2,6 +2,8 @@
 
 
 #include "OpenDoorComponent.h"
+#include "TimerManager.h"
+#include "Engine/World.h"
 
 // Sets default values for this component's properties
 UOpenDoorComponent::UOpenDoorComponent()
@@ -25,36 +27,47 @@ void UOpenDoorComponent::BeginPlay()
 	//vado a catturare il pawn attuale del giocatore
 	Chiave = GetWorld()->GetFirstPlayerController()->GetPawn();
 
-	//OpenDoor();
-
 	// ...
 	
 }
 
-void UOpenDoorComponent::OpenDoor(float DT)
+void UOpenDoorComponent::OpenDoor()
 {
 	auto ActualRot = PortaAprire->GetComponentRotation();
 
-	if (ActualRot.Yaw < StartRot.Yaw + 90)
+	auto DT = GetWorld()->GetDeltaSeconds();
+
+//	if (ActualRot.Yaw < StartRot.Yaw + 90)
+	if(OffsetDeg<OpenDeg)
 	{
 		ActualRot.Yaw += OpenDeg *DT;
+		OffsetDeg += OpenDeg * DT;
 		PortaAprire->SetWorldRotation(ActualRot);
 	}
-	else bClose = false;
+	
+	//else bClose = false;
 
 }
 
-void UOpenDoorComponent::CloseDoor(float DT)
+void UOpenDoorComponent::CloseDoor()
 {
 	auto ActualRot = PortaAprire->GetComponentRotation();
 
-	if (ActualRot.Yaw > StartRot.Yaw)
+	auto DT = GetWorld()->GetDeltaSeconds();
+
+	//if (ActualRot.Yaw > StartRot.Yaw)
+	if (OffsetDeg > 0)
 	{
 		ActualRot.Yaw -= OpenDeg * DT;
+		OffsetDeg -= OpenDeg * DT;
 		PortaAprire->SetWorldRotation(ActualRot);
 	}
-	else bClose = true;
+	//else bClose = true;
+}
 
+void UOpenDoorComponent::ResetClose()
+{
+	bOpening = false;
 }
 
 
@@ -68,17 +81,25 @@ void UOpenDoorComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 
 	if (Attivatore->IsOverlappingActor(Chiave))
 	{
-
-		if (bClose) OpenDoor(DeltaTime);
-
-	
-
+		bOpening = true;
+		//if (bClose) OpenDoor();
 	}
 	else
 	{
-		if (!bClose) CloseDoor(DeltaTime);
+		if (!GetWorld()->GetTimerManager().IsTimerActive(CloseTimer)) 
+		{
+			GetWorld()->GetTimerManager().SetTimer(CloseTimer, this, &UOpenDoorComponent::ResetClose, DelayClose, false);
+		}
 	}
-	
+
+	if (bOpening)
+	{
+		OpenDoor();
+	}
+	else
+	{
+		CloseDoor();
+	}
 
 	// ...
 }

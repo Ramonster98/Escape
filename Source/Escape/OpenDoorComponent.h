@@ -29,15 +29,27 @@ public:
 
 	FRotator StartRot;
 
-	float OpenDeg{90};
+	UPROPERTY(EditAnywhere)
+	float OpenDeg{90.f};
+
+	float OffsetDeg{ 0.f };
+
+	UPROPERTY(EditAnywhere)
+	float DelayClose{ 5.f };
+
+	FTimerHandle CloseTimer;
+
+	bool bOpening = false;
 
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
-	void OpenDoor(float DT);
+	void OpenDoor();
 
-	void CloseDoor(float DT);
+	void CloseDoor();
+
+	void ResetClose();
 
 public:	
 	// Called every frame
